@@ -1,0 +1,5 @@
+amare
+andare
+accettare
+imparare
+controllare

@@ -1,0 +1,10 @@
+buono
+bello
+nuovo
+vecchio
+corto
+forte
+debole
+felice
+triste
+gentile
