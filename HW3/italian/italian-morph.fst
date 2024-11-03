@@ -1,5 +1,6 @@
 %%% Single Character Symbols %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#letter# = [a-zA-ZàèéòìùÀÈÉÒÌÙ]
+#letter# = a-zA-ZàèéòìùÀÈÉÒÌÙ
+%%% #letter# = [a-zA-Z]
 
 %%% Analysis Features %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -32,16 +33,17 @@
 #MorphSyn# = #Number# #Gender# #Person# #VerbTense# #VerbMood# #VerbNominalForm#
 
 
-#ALPJHABET# = #letter# \
-              #Number#:<> #Gender#:<> #Person#:<> #Degree#:<> \
-              #WordArt#:<> #ADJClass#:<> #VerbClass#:<> \
-              #VerbTense#:<> #VerbMood#:<> #VerbNominalForm#:<>
+ALPHABET = [#letter#]
+%%%             #Number#:<> #Gender#:<> #Person#:<> \
+%%%              #WordArt#:<> #ADJClass#:<> #VerbClass#:<> \
+%%%              #VerbTense#:<> #VerbMood#:<> #VerbNominalForm#:<>
 
 %%% definition of the inflectional classes %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%-ADJEKTIVE-Regeln%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-$adjsstems-o$ = "adjectives.lex" || [a-z]* {o}:{} <>:<AdjReg-o>
-$adjsstems-e$ = "adjectives.lex" || [a-z]* {e}:{} <>:<AdjReg-e>
+$ADJ-os$ = "adjectives.lex" || [a-z]* {o}:{} <ADJ>:<>
+$ADJ-es$ = "adjectives.lex" || [a-z]* {e}:{} <ADJ>:<>
+
 
 $AdjReg-o$ = {<masc><sg>}:{o} |\
              {<masc><pl>}:{i} |\
@@ -53,13 +55,9 @@ $AdjReg-e$ = {<masc><sg>}:{e} |\
              {<fem><sg>}:{e} |\
              {<fem><pl>}:{i}
 
-%%% $INFL-ADJ$ = ($AdjGetStem-o$ || $AdjReg-o$) | ($AdjGetStem-e$ || $AdjReg-e$)
-$INFL-ADJ$ = ($adjsstems-o$ || $AdjReg-o$) | ($adjsstems-e$ || $AdjReg-e$)
+$verbstems-are$ = "adjectives.lex" || [a-z]* {are}:{} <VERB>:<>
 
-%%%%%%%%%-VERB-Regeln%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% $verbstems-are$ = "verbs.lex" || [a-z]* {are}:{} <>:<VERB-are>
-
-$verbstems-are$ = #letter# + "are<VERB>" <=> __ <Verb-are>;
+%%% $verbstems-are$ = #letter# + "are<VERB>" <=> __ <Verb-are>;
 $VerbRegInd-are$ = {<indicative><present><1><sg>}:{o} |\
                 {<indicative><present><2><sg>}:{i} |\
                 {<indicative><present><3><sg>}:{a} |\
@@ -83,14 +81,14 @@ $VerbRegInd-are$ = {<indicative><present><1><sg>}:{o} |\
                 {<indicative><future><3><sg>}:{eremo} |\
                 {<indicative><future><1><pl>}:{eremo} |\
                 {<indicative><future><2><pl>}:{erete} |\
-                {<indicative><future><3><pl>}:{eranno};
+                {<indicative><future><3><pl>}:{eranno}
 
 $VerbRegCond-are$ = {<conditional><present><1><sg>}:{erei} |\
                 {<conditional><present><2><sg>}:{eresti} |\
                 {<conditional><present><3><sg>}:{erebbe} |\
                 {<conditional><present><1><pl>}:{eremmo} |\
                 {<conditional><present><2><pl>}:{ereste} |\
-                {<conditional><present><3><pl>}:{erebbero};
+                {<conditional><present><3><pl>}:{erebbero}
 
 $VerbRegSubj-are$ = {<subjunctive><present><1><sg>}:{i} |\
                 {<subjunctive><present><2><sg>}:{i} |\
@@ -103,17 +101,14 @@ $VerbRegSubj-are$ = {<subjunctive><present><1><sg>}:{i} |\
                 {<subjunctive><imperfect><3><sg>}:{asse} |\
                 {<subjunctive><imperfect><1><pl>}:{assimo} |\
                 {<subjunctive><imperfect><2><pl>}:{aste} |\
-                {<subjunctive><imperfect><3><pl>}:{assero};
+                {<subjunctive><imperfect><3><pl>}:{assero}
 
 $VerbRegCondImp-are$ = {<imperative><present><2><sg>}:{a} |\
                 {<imperative><present><3><sg>}:{i} |\
                 {<imperative><present><1><pl>}:{iamo} |\
                 {<imperative><present><2><pl>}:{ate} |\
-                {<imperative><present><3><pl>}:{ino};
+                {<imperative><present><3><pl>}:{ino}
 
+%%% Vereinigen Sie die Transducer fuer die verschiedenen Flexionsklassen mit dem Disjunktions-Operator
 
-$VerbReg-are-Infl$ = $verbstems-are$ || ($VerbRegInd-are$ | $VerbRegCond-are$ | $VerbRegSubj-are$ | $VerbRegCondImp-are$)
-
-$INFL$ = <AdjReg-o> $INFL-ADJ$ |\
-         <AdjReg-e> $INFL-ADJ$ |\
-         <VerbReg-are> $VerbReg-are-Infl$
+($ADJ-es$ $AdjReg-e$) | ($ADJ-os$ $AdjReg-o$) | ($verbstems-are$ ($VerbRegInd-are$ | $VerbRegCond-are$ | $VerbRegSubj-are$ | $VerbRegCondImp-are$))
