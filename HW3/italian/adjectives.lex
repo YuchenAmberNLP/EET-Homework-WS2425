@@ -1,8 +1,8 @@
 buono<ADJ>
 bello<ADJ>
 nuovo<ADJ>
-vecchioADJ>
-cortoADJ>
+vecchio<ADJ>
+corto<ADJ>
 forte<ADJ>
 debole<ADJ>
 felice<ADJ>
