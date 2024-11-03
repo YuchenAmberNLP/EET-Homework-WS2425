@@ -109,6 +109,14 @@ $VerbRegCondImp-are$ = {<imperative><present><2><sg>}:{a} |\
                 {<imperative><present><2><pl>}:{ate} |\
                 {<imperative><present><3><pl>}:{ino}
 
+
+$VerbRegInf-are$ = {<infinite><present>}:{are}
+$VerbRegGerund-are$ = {<gerund><present>}:{ando} |\
+                {<gerund><preterite>}:{ato}
+$VerbRegPart-are$ = {<participle><present>}:{ante} |\
+                {<participle><preterite>}:{ato}
+
+
 %%% Vereinigen Sie die Transducer fuer die verschiedenen Flexionsklassen mit dem Disjunktions-Operator
 
-($ADJ-es$ $AdjReg-e$) | ($ADJ-os$ $AdjReg-o$) | ($verbstems-are$ ($VerbRegInd-are$ | $VerbRegCond-are$ | $VerbRegSubj-are$ | $VerbRegCondImp-are$))
+($ADJ-es$ $AdjReg-e$) | ($ADJ-os$ $AdjReg-o$) | ($verbstems-are$ ($VerbRegInd-are$ | $VerbRegCond-are$ | $VerbRegSubj-are$ | $VerbRegCondImp-are$ | $VerbRegInf-are$ | $VerbRegGerund-are$ | $VerbRegPart-are$))
