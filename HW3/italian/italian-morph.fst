@@ -1,6 +1,5 @@
 %%% Single Character Symbols %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #letter# = a-zA-ZàèéòìùÀÈÉÒÌÙ
-%%% #letter# = [a-zA-Z]
 
 %%% Analysis Features %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -14,14 +13,8 @@
 % Person Feature
 #Person# = <1><2><3>
 
-% degree feature
-% #Degree# = <positive><comparative><superlative>
-
 %%% Agreement Features %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #WordArt# = <ADJ><VERB>
-
-%%% #ADJClass# = <ADJ-o><ADJ-e>
-%%% #VerbClass# = <Verb-are><Verb-ere><Verb-ire>
 
 % verbal features
 %%% There are 3 moods (Indicative Mood, Conditional mood, Subjunctive mood, Imperative mood) for verbs in Italian, for Indicative Mood, there are 4 tenses (present, imperfect, preterite, and future), for conditional mood, there is only 1 tense (present), for subjunctive mood, there are 2 tenses(present), and for imperative mood, there is only present tense conjunction.
@@ -33,9 +26,6 @@
 #MorphSyn# = #Number# #Gender# #Person# #VerbTense# #VerbMood# #VerbNominalForm#
 
 ALPHABET = [#letter#]
-%%%             #Number#:<> #Gender#:<> #Person#:<> \
-%%%              #WordArt#:<> #ADJClass#:<> #VerbClass#:<> \
-%%%              #VerbTense#:<> #VerbMood#:<> #VerbNominalForm#:<>
 
 %%% definition of the inflectional classes %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
