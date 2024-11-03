@@ -32,7 +32,6 @@
 % Morphosyntactic Features
 #MorphSyn# = #Number# #Gender# #Person# #VerbTense# #VerbMood# #VerbNominalForm#
 
-
 ALPHABET = [#letter#]
 %%%             #Number#:<> #Gender#:<> #Person#:<> \
 %%%              #WordArt#:<> #ADJClass#:<> #VerbClass#:<> \
@@ -41,23 +40,42 @@ ALPHABET = [#letter#]
 %%% definition of the inflectional classes %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%-ADJEKTIVE-Regeln%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% $ADJ-os$: Bearbeitung von Adjektiven, die Maskuline Singular From auf -o enden
+%%% Beispiel: "buono" -> "buon"
 $ADJ-os$ = "adjectives.lex" || [a-z]* {o}:{} <ADJ>:<>
+
+%%% $ADJ-es$: Bearbeitung von Adjektiven, die Maskuline Singular From auf -e enden
+%%% Beispiel: "felice" -> "felic"
 $ADJ-es$ = "adjectives.lex" || [a-z]* {e}:{} <ADJ>:<>
 
+%%% $AdjReg-o$: Diese Ersetzungsregel behandelt Adjektive, die im Maskulinum Singular auf "-o" enden. Der Prozess des Entfernens des letzten "o" wurde bereits in der Regel $ADJ-os$ beschrieben, bei der das "-o" von den Adjektivstämmen entfernt wird. Diese Regel fügt die entsprechende Endung basierend auf Geschlecht (maskulin, feminin) und Anzahl (Singular, Plural) hinzu.
+%%% Beispiel:
+%%%  - Maskulinum Singular: {<masc><sg>} "buon" + "o" -> "buono" (das "o" wird für den Singular Maskulinum hinzugefügt)
+%%%  - Maskulinum Plural: {<masc><pl>} "buon" + "i" -> "buoni" (das "i" ersetzt das "o" für den Maskulinum Plural)
+%%%  - Femininum Singular: {<fem><sg>} "buon" + "a" -> "buona" (das "a" ersetzt das "o" für das Femininum Singular)
+%%%  - Femininum Plural: {<fem><pl>} "buon" + "e" -> "buone" (das "e" ersetzt das "o" für den Femininum Plural)
 
 $AdjReg-o$ = {<masc><sg>}:{o} |\
              {<masc><pl>}:{i} |\
              {<fem><sg>}:{a} |\
              {<fem><pl>}:{e}
+%%% Diese Regel ergänzt die in $ADJ-os$ beschriebene Entfernung des letzten "o" und ersetzt es durch die richtige Endung basierend auf den Flexionen des Adjektivs.
+
+%%% $AdjReg-e$: Diese Ersetzungsregel behandelt Adjektive, die sowohl im Maskulinum als auch im Femininum Singular auf "-e" enden. Der Prozess des Entfernens des letzten "e" wurde bereits in der Regel $ADJ-es$ beschrieben, bei der das "-e" von den Adjektivstämmen entfernt wird. Diese Regel fügt die entsprechende Endung basierend auf Geschlecht (maskulin, feminin) und Anzahl (Singular, Plural) hinzu.
+%%% Beispiel:
+%%%  - Maskulinum Singular: {<masc><sg>} "fort" + "e" -> "forte" (das "e" wird für den Singular beider Geschlechter hinzugefügt)
+%%%  - Maskulinum Plural: {<masc><pl>} "fort" + "i" -> "forti" (das "i" ersetzt das "e" für den Maskulinum Plural)
+%%%  - Femininum Singular: {<fem><sg>} "fort" + "e" -> "forte" (das "e" bleibt für das Femininum Singular unverändert)
+%%%  - Femininum Plural: {<fem><pl>} "fort" + "i" -> "forti" (das "i" ersetzt das "e" für den Femininum Plural)
 
 $AdjReg-e$ = {<masc><sg>}:{e} |\
              {<masc><pl>}:{i} |\
              {<fem><sg>}:{e} |\
              {<fem><pl>}:{i}
+%%% Diese Regel ergänzt die in $ADJ-es$ beschriebene Entfernung des letzten "e" und ersetzt es durch die passende Endung basierend auf den Flexionen des Adjektivs.
 
+%%%%%%%%%-VERB-Regeln%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 $verbstems-are$ = "adjectives.lex" || [a-z]* {are}:{} <VERB>:<>
-
-%%% $verbstems-are$ = #letter# + "are<VERB>" <=> __ <Verb-are>;
 $VerbRegInd-are$ = {<indicative><present><1><sg>}:{o} |\
                 {<indicative><present><2><sg>}:{i} |\
                 {<indicative><present><3><sg>}:{a} |\
