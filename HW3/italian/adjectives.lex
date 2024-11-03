@@ -1,14 +1,15 @@
-buono<ADJ><masc><sg> % gut
-bello<ADJ><masc><sg> % schön
-nuovo<ADJ><masc><sg> % neu
-vecchio<ADJ><masc><sg> % alt
-corto<ADJ><masc><sg> % kurz
-forte<ADJ><masc><sg> % stark
-forte<ADJ><fem><sg> % stark
-debole<ADJ><masc><sg> % schwach
-debole<ADJ><fem><sg> % schwach
-felice<ADJ><masc><sg> % glücklich
-triste<ADJ><fem><sg> % traurig
-triste<ADJ><masc><sg> % traurig
-gentile<ADJ><fem><sg> % kind
-gentile<ADJ><masc><sg> % kind
+buono<ADJ><AdjReg-o>
+bello<ADJ><AdjReg-o>
+nuovo<ADJ><AdjReg-o>
+vecchio<ADJ><AdjReg-o>
+corto<ADJ><AdjReg-o>
+forte<ADJ><AdjReg-e>
+debole<ADJ><AdjReg-e>
+felice<ADJ><AdjReg-e>
+triste<ADJ><AdjReg-e>
+gentile<ADJ><AdjReg-e>
+amare<VERB><VerbReg-are>
+andare<VERB><VerbReg-are>
+accettare<VERB><VerbReg-are>
+imparare<VERB><VerbReg-are>
+controllare<VERB><VerbReg-are>
