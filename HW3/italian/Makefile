@@ -22,3 +22,4 @@ https://tandem.net/blog/italian-adjectives
 https://www.cis.lmu.de/~schmid/tools/SMOR/dspin/ch01s03.html#Tags
 https://conjugator.reverso.net/conjugation-italian-verb-amare.html
 https://conjugator.reverso.net/conjugation-italian-verb-amare.html
+https://www.thoughtco.com/italian-verb-conjugations-amare-4085606
