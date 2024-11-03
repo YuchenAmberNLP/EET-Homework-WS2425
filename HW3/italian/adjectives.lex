@@ -1,0 +1,15 @@
+buono<ADJ>
+bello<ADJ>
+nuovo<ADJ>
+vecchio<ADJ>
+corto<ADJ>
+forte<ADJ>
+debole<ADJ>
+felice<ADJ>
+triste<ADJ>
+gentile<ADJ>
+amare<VERB>
+andare<VERB>
+accettare<VERB>
+imparare<VERB>
+controllare<VERB>
