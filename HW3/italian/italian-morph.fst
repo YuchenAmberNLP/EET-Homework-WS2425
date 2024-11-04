@@ -32,11 +32,11 @@ ALPHABET = [#letter#]
 %%%%%%%%%-ADJEKTIVE-Regeln%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% $ADJ-os$: Bearbeitung von Adjektiven, die Maskuline Singular From auf -o enden
 %%% Beispiel: "buono" -> "buon"
-$ADJ-os$ = "adjectives.lex" || [a-z]* {o}:{} <ADJ>:<>
+$ADJ-os$ = "adjectives-o.lex" || [a-z]* {o}:{} <ADJ>:<>
 
 %%% $ADJ-es$: Bearbeitung von Adjektiven, die Maskuline Singular From auf -e enden
 %%% Beispiel: "felice" -> "felic"
-$ADJ-es$ = "adjectives.lex" || [a-z]* {e}:{} <ADJ>:<>
+$ADJ-es$ = "adjectives-e.lex" || [a-z]* {e}:{} <ADJ>:<>
 
 %%% $AdjReg-o$: Diese Ersetzungsregel behandelt Adjektive, die im Maskulinum Singular auf "-o" enden. Der Prozess des Entfernens des letzten "o" wurde bereits in der Regel $ADJ-os$ beschrieben, bei der das "-o" von den Adjektivstämmen entfernt wird. Diese Regel fügt die entsprechende Endung basierend auf Geschlecht (maskulin, feminin) und Anzahl (Singular, Plural) hinzu.
 %%% Beispiel:
@@ -66,8 +66,9 @@ $AdjReg-e$ = {<masc><sg>}:{e} |\
 
 %%%%%%%%%-VERB-Regeln%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% $verbstems-are$ Bearbeitung von Verben, die 1st Conjugation Form auf -are enden
-%%% Beispiel: "amare" -> "am" 
-$verbstems-are$ = "adjectives.lex" || [a-z]* {are}:{} <VERB>:<>
+%%% Beispiel: "amare" -> "am"
+
+$verbstems-are$ = "verbs-are.lex" || [a-z]* {are}:{} <VERB>:<>
 
 %%% $VerbRegInd-are$: Diese Ersetzungsregel gilt für Verben, die je nach Zeitform im Indikativ, Konjunktiv, Konditional oder Imperativ auf -are enden.
 %%% Beispiel:
@@ -98,7 +99,6 @@ $verbstems-are$ = "adjectives.lex" || [a-z]* {are}:{} <VERB>:<>
 
 %%%  Auch die Zeitformen von Konditional, Konjunktiv, Subjunktiv und Imperativ sind ähnlich.
 
-
 $VerbRegInd-are$ = {<indicative><present><1><sg>}:{o} |\
                 {<indicative><present><2><sg>}:{i} |\
                 {<indicative><present><3><sg>}:{a} |\
@@ -124,12 +124,38 @@ $VerbRegInd-are$ = {<indicative><present><1><sg>}:{o} |\
                 {<indicative><future><2><pl>}:{erete} |\
                 {<indicative><future><3><pl>}:{eranno}
 
+
+%%% $VerbRegCond-are$: Diese Ersetzungsregel beschreibt die Konjugation von Verben, die im Konditional Präsens auf -are enden, nach Person und Anzahl.
+%%% Beispiel:
+%%%  - Konditional Präsens 1st Person Singular: {<conditional><present><1><sg>} "am" + "erei" -> "amerei" (das "erei" ersetzt das "are")
+%%%  - Konditional Präsens 2te Person Singular: {<conditional><present><2><sg>} "am" + "eresti" -> "ameresti" (das "eresti" ersetzt das "are")
+%%%  - Konditional Präsens 3te Person Singular: {<conditional><present><3><sg>} "am" + "erebbe" -> "amerebbe" (das "erebbe" ersetzt das "are")
+%%%  - Konditional Präsens 1st Person Plural: {<conditional><present><1><pl>} "am" + "eremmo" -> "ameremmo" (das "eremmo" ersetzt das "are")
+%%%  - Konditional Präsens 2te Person Plural: {<conditional><present><2><pl>} "am" + "ereste" -> "amereste" (das "ereste" ersetzt das "are")
+%%%  - Konditional Präsens 3te Person Plural: {<conditional><present><3><pl>} "am" + "erebbero" -> "amerebbero" (das "erebbero" ersetzt das "are")
+
 $VerbRegCond-are$ = {<conditional><present><1><sg>}:{erei} |\
                 {<conditional><present><2><sg>}:{eresti} |\
                 {<conditional><present><3><sg>}:{erebbe} |\
                 {<conditional><present><1><pl>}:{eremmo} |\
                 {<conditional><present><2><pl>}:{ereste} |\
                 {<conditional><present><3><pl>}:{erebbero}
+
+
+%%% $VerbRegSubj-are$: Diese Ersetzungsregel beschreibt die Konjugation von Verben im Konjunktiv Präsens und Imperfekt für Verben, die auf -are enden.
+%%% Beispiel:
+%%%  - Konjunktiv Präsens 1st Person Singular: {<subjunctive><present><1><sg>} "am" + "i" -> "ami" (das "i" ersetzt das "are")
+%%%  - Konjunktiv Präsens 2te Person Singular: {<subjunctive><present><2><sg>} "am" + "i" -> "ami" (das "i" ersetzt das "are")
+%%%  - Konjunktiv Präsens 3te Person Singular: {<subjunctive><present><3><sg>} "am" + "i" -> "ami" (das "i" ersetzt das "are")
+%%%  - Konjunktiv Präsens 1st Person Plural: {<subjunctive><present><1><pl>} "am" + "iamo" -> "amiamo" (das "iamo" ersetzt das "are")
+%%%  - Konjunktiv Präsens 2te Person Plural: {<subjunctive><present><2><pl>} "am" + "iate" -> "amiate" (das "iate" ersetzt das "are")
+%%%  - Konjunktiv Präsens 3te Person Plural: {<subjunctive><present><3><pl>} "am" + "ino" -> "amino" (das "ino" ersetzt das "are")
+%%%  - Konjunktiv Imperfekt 1st Person Singular: {<subjunctive><imperfect><1><sg>} "am" + "assi" -> "amassi" (das "assi" ersetzt das "are")
+%%%  - Konjunktiv Imperfekt 2te Person Singular: {<subjunctive><imperfect><2><sg>} "am" + "assi" -> "amassi" (das "assi" ersetzt das "are")
+%%%  - Konjunktiv Imperfekt 3te Person Singular: {<subjunctive><imperfect><3><sg>} "am" + "asse" -> "amasse" (das "asse" ersetzt das "are")
+%%%  - Konjunktiv Imperfekt 1st Person Plural: {<subjunctive><imperfect><1><pl>} "am" + "assimo" -> "amassimo" (das "assimo" ersetzt das "are")
+%%%  - Konjunktiv Imperfekt 2te Person Plural: {<subjunctive><imperfect><2><pl>} "am" + "aste" -> "amaste" (das "aste" ersetzt das "are")
+%%%  - Konjunktiv Imperfekt 3te Person Plural: {<subjunctive><imperfect><3><pl>} "am" + "assero" -> "amassero" (das "assero" ersetzt das "are")
 
 $VerbRegSubj-are$ = {<subjunctive><present><1><sg>}:{i} |\
                 {<subjunctive><present><2><sg>}:{i} |\
@@ -144,6 +170,15 @@ $VerbRegSubj-are$ = {<subjunctive><present><1><sg>}:{i} |\
                 {<subjunctive><imperfect><2><pl>}:{aste} |\
                 {<subjunctive><imperfect><3><pl>}:{assero}
 
+
+%%% $VerbRegCondImp-are$: Diese Ersetzungsregel beschreibt die Bildung des Imperativs für Verben, die auf -are enden.
+%%% Beispiel:
+%%%  - Imperativ 2te Person Singular: {<imperative><present><2><sg>} "am" + "a" -> "ama" (das "a" ersetzt das "are")
+%%%  - Imperativ 3te Person Singular: {<imperative><present><3><sg>} "am" + "i" -> "ami" (das "i" ersetzt das "are")
+%%%  - Imperativ 1st Person Plural: {<imperative><present><1><pl>} "am" + "iamo" -> "amiamo" (das "iamo" ersetzt das "are")
+%%%  - Imperativ 2te Person Plural: {<imperative><present><2><pl>} "am" + "ate" -> "amate" (das "ate" ersetzt das "are")
+%%%  - Imperativ 3te Person Plural: {<imperative><present><3><pl>} "am" + "ino" -> "amino" (das "ino" ersetzt das "are")
+
 $VerbRegCondImp-are$ = {<imperative><present><2><sg>}:{a} |\
                 {<imperative><present><3><sg>}:{i} |\
                 {<imperative><present><1><pl>}:{iamo} |\
@@ -151,9 +186,27 @@ $VerbRegCondImp-are$ = {<imperative><present><2><sg>}:{a} |\
                 {<imperative><present><3><pl>}:{ino}
 
 
+%%% $VerbRegInf-are$: Diese Ersetzungsregel beschreibt die Bildung des Infinitivs Präsens für Verben, die auf -are enden.
+%%% Beispiel:
+%%%  - Infinitiv Präsens: {<infinite><present>} "am" + "are" -> "amare" (das "are" bleibt bestehen)
+
 $VerbRegInf-are$ = {<infinite><present>}:{are}
+
+
+%%% $VerbRegGerund-are$: Diese Ersetzungsregel beschreibt die Bildung des Gerundiums für Verben, die auf -are enden.
+%%% Beispiel:
+%%%  - Gerundium Präsens: {<gerund><present>} "am" + "ando" -> "amando" (das "ando" ersetzt das "are")
+%%%  - Gerundium Perfekt: {<gerund><preterite>} "am" + "ato" -> "amato" (das "ato" ersetzt das "are")
+
 $VerbRegGerund-are$ = {<gerund><present>}:{ando} |\
                 {<gerund><preterite>}:{ato}
+
+
+%%% $VerbRegPart-are$: Diese Ersetzungsregel beschreibt die Bildung des Partizips für Verben, die auf -are enden.
+%%% Beispiel:
+%%%  - Partizip Präsens: {<participle><present>} "am" + "ante" -> "amante" (das "ante" ersetzt das "are")
+%%%  - Partizip Perfekt: {<participle><preterite>} "am" + "ato" -> "amato" (das "ato" ersetzt das "are")
+
 $VerbRegPart-are$ = {<participle><present>}:{ante} |\
                 {<participle><preterite>}:{ato}
 
