@@ -1,14 +1,12 @@
 import os
 import json
 import sys
-import nltk
-from nltk.tokenize import word_tokenize
 from collections import defaultdict
 import string
 
 
 def text_tokenize(text):
-    tokens = word_tokenize(text)
+    tokens = text.split()
     filtered_tokens = [word for word in tokens if word not in string.punctuation]
     return filtered_tokens
 
@@ -78,8 +76,6 @@ class NaiveBayesClassifier:
 
 
 if __name__ == "__main__":
-    nltk.download('punkt_tab')
-    # nltk.download('punkt')
     train_dir = sys.argv[1]
     paramfile_name = sys.argv[2]
     classifier = NaiveBayesClassifier()
