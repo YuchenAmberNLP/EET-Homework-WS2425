@@ -81,12 +81,12 @@ class NaiveBayesClassifier:
         # print("discount calculated,", self.discount)
 
         for class_name, word_freq in self.word_freq_per_class.items():
-            self.r_w_given_c[class_name] = {
-                word: max(0, freq - self.discount) for word, freq in word_freq.items()
-            }
-            self.r_w_given_c_sum[class_name] = sum(self.r_w_given_c[class_name].values())
             total_words = self.total_word_per_class[class_name]
-            self.alpha_c[class_name] = (1 - self.r_w_given_c_sum[class_name] / total_words) if total_words > 0 else 0
+            self.r_w_given_c[class_name] = {
+                word: (max(0, freq - self.discount)/total_words) for word, freq in word_freq.items()
+            } if total_words > 0 else 0
+            self.r_w_given_c_sum[class_name] = sum(self.r_w_given_c[class_name].values())
+            self.alpha_c[class_name] = (1 - self.r_w_given_c_sum[class_name])
         #     print("alpha-c calculated, ", alpha_c)
         # print("alpha and discount calculated.")
 
@@ -96,14 +96,10 @@ class NaiveBayesClassifier:
             freq_w = sum(self.word_freq_per_class[c][w] for c in self.word_freq_per_class)
             self.apriori_prob[w] = freq_w / total_count if total_count > 0 else 0
 
-
     def calculate_prob_with_smoothing(self, word, class_name):
-        total_words = self.total_word_per_class[class_name]
         r_w_given_c = self.r_w_given_c[class_name].get(word, 0)
-        p_w_given_c = (r_w_given_c / total_words) if total_words > 0 else 0
         p_w_backoff = self.apriori_prob.get(word, 0)
-
-        prob_with_smoothing = p_w_given_c + self.alpha_c[class_name] * p_w_backoff
+        prob_with_smoothing = r_w_given_c + self.alpha_c[class_name] * p_w_backoff
 
         return prob_with_smoothing
 
