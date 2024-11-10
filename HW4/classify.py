@@ -75,5 +75,5 @@ if __name__ == "__main__":
 # Mit dem Befehl: python3 classify.py ... | cut -f2 | sort | uniq -c erhalten wir folgendes Ergebnis:
 ### predicted: 1446 ham （actual: 1500 ham）
 ### predicted: 4554 spam （actual: 4500 spam）
-
-### Accuracy = (1446 + 4500)/(1446 + 4554) = 5946/6000 = 0.991
+### Correct predicted in total: 5888
+### Accuracy = 5888 / (1500+4500)*100% = 98.13%
