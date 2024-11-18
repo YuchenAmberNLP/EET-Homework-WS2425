@@ -79,6 +79,27 @@ class LogLinearClassifier:
                     gradient = -count * predicted_probs[c]
                 self.weights[c][word] += self.learning_rate * gradient
 
+    def train(self, texts, labels, epochs=10):
+        for epoch in range(epochs):
+            samples = list(zip(texts, labels))
+            random.shuffle(samples)  # 打亂數據集
+            for email, label in samples:
+                features = self.get_features(email)
+                self.update_weights(features, label)
+
+
+    def save_params(self, paramfile_path):
+        weights_dict = {c: dict(self.weights[c]) for c in self.weights}
+        params = {
+            "classes": self.classes,
+            "weights": weights_dict
+        }
+
+        with open(paramfile_path, 'w', encoding='utf-8') as f:
+            json.dump(params, f, ensure_ascii=False, indent=4)
+        print(f"Model parameters saved to {paramfile_path}")
+
+
     # def calculate_f1(self, dev_data, dev_labels):
     #     predictions = [self.classify(email) for email in dev_data]
     #     return f1_score(dev_labels, predictions, average='macro')
@@ -105,24 +126,6 @@ class LogLinearClassifier:
     #     print(f"Best Model: Learning rate = {self.best_learning_rate}, Epoch = {self.best_epoch}, F1 Score = {self.best_f1}")
     #
 
-    def train(self, texts, labels, epochs=10):
-        for epoch in range(epochs):
-            samples = list(zip(texts, labels))
-            random.shuffle(samples)  # 打亂數據集
-            for email, label in samples:
-                features = self.get_features(email)
-                self.update_weights(features, label)
-
-    def save_params(self, paramfile_path):
-        weights_dict = {c: dict(self.weights[c]) for c in self.weights}
-        params = {
-            "classes": self.classes,
-            "weights": weights_dict
-        }
-
-        with open(paramfile_path, 'w', encoding='utf-8') as f:
-            json.dump(params, f, ensure_ascii=False, indent=4)
-        print(f"Model parameters saved to {paramfile_path}")
 
 if __name__ == "__main__":
     train_dir = sys.argv[1]
