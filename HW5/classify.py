@@ -38,7 +38,6 @@ if __name__ == "__main__":
         for class_name in os.listdir(mail_dir):
             class_dir = os.path.join(mail_dir, class_name)
             if os.path.isdir(class_dir):
-                emails = []
                 for filename in os.listdir(class_dir):
                     file_path = os.path.join(class_dir, filename)
                     with open(file_path, 'r', encoding='ISO-8859-1') as f:
