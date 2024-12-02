@@ -194,16 +194,6 @@ class LCCRFTagger:
 
         # 提取真实标签序列
         true_tags = [tag for _, tag in sentence]
-        gamma = [{} for _ in range(n)]  # 存储每个位置和标签的 posterior 概率
-
-        # Compute γt(i) = αt(i) * βt(i) for all positions and tags
-        for i in range(n):
-            for tag in self.tags:
-                gamma[i][tag] = alpha[i].get(tag, 0) + beta[i].get(tag, 0) - z_log  # 计算对数后验概率
-            # 对每个位置归一化 gamma[i]，确保其和为 1
-            total_gamma = sum(math.exp(gamma[i][tag]) for tag in self.tags)  # 计算归一化因子
-            for tag in self.tags:
-                gamma[i][tag] -= math.log(total_gamma) if total_gamma != 0 else 0
 
         # 观测特征期望
         for i in range(n):
@@ -237,7 +227,7 @@ class LCCRFTagger:
                     for feature_name, feature_value in word_features.items():
                         feature_key = f"{feature_name}={feature_value}"
                         # Subtract the expected counts from the model
-                        gradient[t][feature_key] -= math.exp(gamma[i].get(t, 0)) * marginal_prob  # 在对数空间中更新
+                        gradient[t][feature_key] -= marginal_prob  # 在对数空间中更新
 
         return gradient
 
