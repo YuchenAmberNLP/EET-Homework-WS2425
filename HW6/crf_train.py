@@ -125,19 +125,7 @@ class LCCRFTagger:
         n = len(sentence)
 
         # 提取真实标签序列
-        true_tags = [tag for _, tag in sentence]
-        gamma = [{} for _ in range(n)]  #
-
-        # Compute γt(i) = αt(i) * βt(i) for all positions and tags
-        for i in range(n):
-            for tag in self.tags:
-                gamma[i][tag] = alpha[i].get(tag, 0) + beta[i].get(tag, 0) - z_log  # 计算对数后验概率
-            #
-            total_gamma = sum(math.exp(gamma[i][tag]) for tag in self.tags)
-            for tag in self.tags:
-                gamma[i][tag] -= math.log(total_gamma) if total_gamma != 0 else 0
-
-        # beobachten hfk
+        true_tags = [tag for _, tag in sentence]        # beobachten hfk
         for i in range(n):
             word = sentence[i][0]
             prev_tag = true_tags[i - 1] if i > 0 else "<s>"
@@ -160,13 +148,13 @@ class LCCRFTagger:
                             - z_log
                     )
                     # print(log_marginal_prob)
-                    marginal_prob = numpy.exp(log_marginal_prob)  # 转回概率值
+                    marginal_prob = math.exp(log_marginal_prob)  # 转回概率值
 
 
                     for feature_name, feature_value in word_features.items():
                         feature_key = f"{feature_name}={feature_value}"
                         # Subtract the expected counts from the model
-                        gradient[t][feature_key] -= math.exp(gamma[i].get(t, 0)) * marginal_prob  # 在对数空间中更新
+                        gradient[t][feature_key] -= marginal_prob  # 在对数空间中更新
 
         return gradient
 
