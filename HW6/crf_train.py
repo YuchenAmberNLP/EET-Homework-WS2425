@@ -147,14 +147,14 @@ class LCCRFTagger:
                             + beta[i][t]
                             - z_log
                     )
-                    # print(log_marginal_prob)
-                    marginal_prob = math.exp(log_marginal_prob)  # 转回概率值
-
+                    log_marginal_prob = max(log_marginal_prob, -103)
+                    clipped_log_prob = min(log_marginal_prob, 700)
+                    marginal_prob = math.exp(clipped_log_prob)
 
                     for feature_name, feature_value in word_features.items():
                         feature_key = f"{feature_name}={feature_value}"
                         # Subtract the expected counts from the model
-                        gradient[t][feature_key] -= marginal_prob  # 在对数空间中更新
+                        gradient[t][feature_key] -= marginal_prob
 
         return gradient
 
@@ -220,7 +220,7 @@ if __name__ == "__main__":
 
 
     # initialize model
-    sub_train_len = int(len(train_sentences) * 0.1)  # 计算前 10% 的样本数量
+    sub_train_len = int(len(train_sentences) * 0.1)  #
     sub_train_sentences = random.sample(train_sentences, sub_train_len)
     model = LCCRFTagger(sub_train_sentences, num_epochs=2)
     print(len(model.tags))
