@@ -23,12 +23,41 @@ def load_data(filepath):
     return sentences
 
 
+def read_paramfile(filepath):
+    with open(filepath, 'r') as f:
+        params = json.load(f)
+
+    tags = params["tags"]
+
+    weights = defaultdict(dict)
+
+    feature_mappings = [
+        ("word-tag", "word"),
+        ("suffix-tag", "suffix"),
+        ("prev_tag-tag", "prev_tag")
+    ]
+    for weights_key, feature_type in feature_mappings:
+        feature_weights = params["weights"].get(weights_key, {})
+        # print(feature_weights)
+        for key, value in feature_weights.items():
+            feature, tag = key.rsplit('-', 1)
+            # print(feature)
+            feature_key = f"{feature_type}={feature}"
+            weights[tag][feature_key] = value
+
+    return tags, weights
+
+
 class LCCRFTagger:
-    def __init__(self, sentences):
-        self.sentences = sentences
-        tags = set(tag for words, tags in sentences for tag in tags)
-        self.tags = tags
-        self.weights = defaultdict(dict)
+    def __init__(self, sentences=None, load_paramfile=None):
+        if sentences != None and load_paramfile == None:
+            self.sentences = sentences
+            tags = set(tag for words, tags in sentences for tag in tags)
+            self.tags = tags
+            self.weights = defaultdict(dict)
+        elif load_paramfile != None and sentences == None:
+            print("paramfile loaded.")
+            self.tags, self.weights = read_paramfile(load_paramfile)
 
     def log_sum_exp(self, scores):
         # prevent overflow
@@ -172,8 +201,58 @@ class LCCRFTagger:
 
             print(f"Epoch {epoch + 1}/{num_epochs} completed")
 
+    def viterbi(self, words):
+        n = len(words)
+        dp = [{} for _ in range(n+2)]
+        backpointer = [{} for _ in range(n+2)]
+        dp[0]["<s>"] = 0.0  # start of a sentence, score = 0
+        for tag in self.tags:
+            features = self.extract_word_features(words, 0)
+            score = self.compute_feature_score(features, tag)
+            dp[1][tag] = score
+            backpointer[1][tag] = "<s>"
+        # from 2nd word in the sentence:
+        for i in range(2, n + 1):
+            for tag in self.tags:
+                max_score = -math.inf
+                best_prev_tag = None
 
-    def save_params(self, filepath):
+                for prev_tag in self.tags:
+                    prev_score = dp[i - 1][prev_tag]
+                    features = self.extract_word_features(words, i-1)
+
+                    # current score
+                    score = prev_score + self.compute_feature_score(features, tag)
+
+                    if score > max_score:
+                        max_score = score
+                        best_prev_tag = prev_tag
+
+                dp[i][tag] = max_score
+                backpointer[i][tag] = best_prev_tag
+
+        dp[n + 1]["<s>"] = -math.inf  # 初始化为负无穷大
+        for tag in self.tags:
+            prev_score = dp[n][tag]
+            features = self.extract_word_features(words, n, tag)
+
+            score = prev_score + self.compute_feature_score(features, '<s>')
+
+            if score > dp[n + 1]["<s>"]:
+                dp[n + 1]["<s>"] = score
+                backpointer[n + 1]["<s>"] = tag
+
+        best_last_tag = backpointer[n + 1]["<s>"]
+        best_path = [best_last_tag]
+        for i in range(n, 0, -1):
+            best_last_tag = backpointer[i][best_last_tag]
+            best_path.append(best_last_tag)
+        best_path.reverse()
+        # print(backpointer)
+        return best_path[1:]
+
+
+def save_params(self, filepath):
 
         param_weights = defaultdict(dict)
 
