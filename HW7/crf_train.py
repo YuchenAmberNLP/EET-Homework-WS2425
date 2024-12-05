@@ -50,6 +50,7 @@ def read_paramfile(filepath):
 
 class LCCRFTagger:
     def __init__(self, sentences=None, load_paramfile=None):
+        self.best_weights = defaultdict(dict)
         if sentences != None and load_paramfile == None:
             self.sentences = sentences
             tags = set(tag for words, tags in sentences for tag in tags)
@@ -97,7 +98,7 @@ class LCCRFTagger:
     def compute_feature_score(self, features, tag):
         return sum(self.weights[tag].get(f, 0.0) for f in features)
 
-    def forward(self, sentence):
+    def forward(self, sentence, threshold):
         """
         forward alg for alpha
         """
@@ -108,17 +109,23 @@ class LCCRFTagger:
         alpha[0]['<s>'] = 0.0
 
         for i in range(1, n+2):
+            max_score = float("-inf")
+            scores = {}
             for tag in self.tags if i < n+1 else ['<s>']:
                 # print(i-1)
-                scores = [
-                    prev_score + self.compute_feature_score(self.extract_word_features(words, i-1, prev_tag), tag)
-                    for prev_tag, prev_score in alpha[i-1].items()
-                ]
-                alpha[i][tag] = self.log_sum_exp(scores)
+                scores[tag] = self.log_sum_exp([
+                    prev_score + self.compute_feature_score(
+                        self.extract_word_features(words, i - 1, prev_tag), tag
+                    )
+                    for prev_tag, prev_score in alpha[i - 1].items()
+                ])
+                max_score = max(max_score, scores[tag])
+            prune_threshold = max_score + math.log(threshold)
+            alpha[i] = {tag: score for tag, score in scores.items() if score > prune_threshold}
 
         return alpha
 
-    def backward(self, sentence):
+    def backward(self, sentence, alpha):
         """
         backward alg for beta
         """
@@ -131,7 +138,7 @@ class LCCRFTagger:
 
         # Iterate from the second to last position (n) down to the first position (0)
         for i in range(n, -1, -1):
-            for tag in self.tags if i > 0 else ['<s>']:  # Use <s> for the last position
+            for tag in alpha[i] if i > 0 else ['<s>']:  # Use <s> for the last position
                 word_features = self.extract_word_features(words, i, tag)
                 scores = [
                     beta[i + 1][next_tag] + self.compute_feature_score(word_features, next_tag)
@@ -143,7 +150,7 @@ class LCCRFTagger:
 
 
 
-    def compute_gradient(self, sentence, alpha, beta):
+    def compute_gradient(self, sentence, alpha, beta, l1_lambda):
         gradient = defaultdict(lambda: defaultdict(float))
 
         # beobachten hfk
@@ -175,6 +182,12 @@ class LCCRFTagger:
                     for feature in context_features:
                         gradient[t][feature] -= gamma
 
+        for tag, feature_weights in self.weights.items():
+            for feature, weight in feature_weights.items():
+                # L1 正则化对梯度的贡献
+                l1_penalty = l1_lambda * (1 if weight > 0 else -1)
+                gradient[tag][feature] = gradient[tag].get(feature, 0.0) - l1_penalty
+
         return gradient
 
     def update_weights(self, gradient, learning_rate):
@@ -182,22 +195,27 @@ class LCCRFTagger:
             for feature_key, grad_value in feature_gradients.items():
                 self.weights[tag][feature_key] = self.weights[tag].get(feature_key, 0.0) + learning_rate * grad_value
 
-
-    def train(self, train_sentences, num_epochs=2, learning_rate=0.1):
+    def train(self, train_sentences, dev_sentences, num_epochs=2, learning_rate=0.1, l1_lambda=0.01, threshold=0.001):
         sentences = train_sentences
+        best_accuracy = 0
         self.weights = defaultdict(lambda: defaultdict(float))
 
         for epoch in range(num_epochs):
             random.shuffle(sentences)
 
             for sentence in sentences:
-                alpha = self.forward(sentence)
-                beta = self.backward(sentence)
-                # assert math.isclose(z_log_a, z_log_b, rel_tol=1e-6), "Forward and Backward results do not match!"
-                # print(z_log_a, z_log_b)
-                gradient = self.compute_gradient(sentence, alpha, beta)
+                alpha = self.forward(sentence, threshold)
+                beta = self.backward(sentence, alpha)
+
+                gradient = self.compute_gradient(sentence, alpha, beta, l1_lambda)
 
                 self.update_weights(gradient, learning_rate)
+
+            accuracy = self.evaluate(dev_sentences)
+
+            if accuracy > best_accuracy:
+                best_accuracy = accuracy
+                self.best_weights = self.weights
 
             print(f"Epoch {epoch + 1}/{num_epochs} completed")
 
@@ -231,7 +249,7 @@ class LCCRFTagger:
                 dp[i][tag] = max_score
                 backpointer[i][tag] = best_prev_tag
 
-        dp[n + 1]["<s>"] = -math.inf  # 初始化为负无穷大
+        dp[n + 1]["<s>"] = -math.inf  # initialize
         for tag in self.tags:
             prev_score = dp[n][tag]
             features = self.extract_word_features(words, n, tag)
@@ -252,26 +270,45 @@ class LCCRFTagger:
         return best_path[1:]
 
 
-def save_params(self, filepath):
 
-        param_weights = defaultdict(dict)
+    def evaluate(self, dev_sentences):
+        total_tags = 0
+        correct_tags = 0
 
-        for tag, features in self.weights.items():
-            for feature, value in features.items():
-                if "=" in feature:
-                    feature_type, feature_value = feature.split("=", 1)
-                    key = f"{feature_value}-{tag}"  # 生成新的键
-                    param_weights[f"{feature_type}-tag"][key] = value
-                else:
-                    raise ValueError(f"Unexpected feature format: {feature}")
-        params = {
-            "tags": list(self.tags),
-            "weights": dict(param_weights)
-        }
+        for sentence in dev_sentences:
+            words, true_tags = sentence
+            # prediction
+            predicted_tags = self.viterbi(words)
 
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(params, f, ensure_ascii=False, indent=4)
-        print(f"Model parameters saved to {filepath}")
+            # calculate correct tags
+            for pred, true in zip(predicted_tags, true_tags):
+                if pred == true:
+                    correct_tags += 1
+                total_tags += 1
+
+        accuracy = correct_tags / total_tags if total_tags > 0 else 0.0
+        return accuracy
+
+    def save_params(self, filepath):
+
+            param_weights = defaultdict(dict)
+
+            for tag, features in self.best_weights.items():
+                for feature, value in features.items():
+                    if "=" in feature:
+                        feature_type, feature_value = feature.split("=", 1)
+                        key = f"{feature_value}-{tag}"  # 生成新的键
+                        param_weights[f"{feature_type}-tag"][key] = value
+                    else:
+                        raise ValueError(f"Unexpected feature format: {feature}")
+            params = {
+                "tags": list(self.tags),
+                "weights": dict(param_weights)
+            }
+
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(params, f, ensure_ascii=False, indent=4)
+            print(f"Model parameters saved to {filepath}")
 
 
 
