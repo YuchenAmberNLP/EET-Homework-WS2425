@@ -353,19 +353,20 @@ if __name__ == "__main__":
     dev_file = sys.argv[2]
     param_file = sys.argv[3]
     train_sentences = load_data(train_file)
+    # print(train_sentences)
     dev_sentences = load_data(dev_file)
     print("train_sentences loaded")
     # print(train_sentences)
 
 
     # initialize model
-    sub_train_len = int(len(train_sentences) * 0.1)  #
+    sub_train_len = int(len(train_sentences) * 0.002)  #
     sub_train_sentences = random.sample(train_sentences, sub_train_len)
-    sub_dev_len = int(len(dev_sentences) * 0.1)  #
+    sub_dev_len = int(len(dev_sentences) * 0.002)  #
     sub_dev_sentences = random.sample(dev_sentences, sub_dev_len)
     model = LCCRFTagger(train_sentences)
     print(len(model.tags))
     # print(model.tags)
     # print(len(model.tags))
-    model.train(sub_train_sentences, sub_dev_sentences, num_epochs=10, learning_rate=0.1)
+    model.train(sub_train_sentences, sub_dev_sentences, num_epochs=2, learning_rate=0.1)
     model.save_params(param_file)
