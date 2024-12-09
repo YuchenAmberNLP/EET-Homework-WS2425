@@ -44,6 +44,8 @@ def read_paramfile(filepath):
             # print(feature)
             feature_key = f"{feature_type}={feature}"
             weights[tag][feature_key] = value
+    
+    print(f"Weights loaded from {filepath}: {dict(weights)}")
 
     return tags, weights
 
@@ -54,12 +56,13 @@ class LCCRFTagger:
         # cache
         self.feature_cache = {}
         self.score_cache = {}
+
         # initialize or load tags and weights
         if sentences != None and load_paramfile == None:
             self.sentences = sentences
             tags = set(tag for words, tags in sentences for tag in tags)
             self.tags = tags
-            self.weights = defaultdict(dict)
+            self.weights = defaultdict(lambda: defaultdict(lambda: random.uniform(-0.01, 0.01)))
         elif load_paramfile != None and sentences == None:
             print("paramfile loaded.")
             self.tags, self.weights = read_paramfile(load_paramfile)
@@ -206,7 +209,7 @@ class LCCRFTagger:
                 for feature in lex_features:
                     gradient[t][feature] -= gamma
 
-                for t_prev, alpha_score in alpha[i].items():
+                for t_prev, alpha_score in alpha[i-1].items():
                     # expected context feature values
                     context_features = self.extract_context_features(t_prev)
                     context_score = self.compute_feature_score(context_features, t)
@@ -223,20 +226,24 @@ class LCCRFTagger:
 
         return gradient
 
-    def update_weights(self, gradient, learning_rate):
+    def update_weights(self, gradient, learning_rate, max_grad=5.0):
         for tag, feature_gradients in gradient.items():
             for feature_key, grad_value in feature_gradients.items():
+                # Clip the gradient
+                grad_value = max(min(grad_value, max_grad), -max_grad)
                 self.weights[tag][feature_key] = self.weights[tag].get(feature_key, 0.0) + learning_rate * grad_value
 
-    def train(self, train_sentences, dev_sentences, num_epochs=2, learning_rate=0.1, l1_lambda=0.01, threshold=0.001):
+    def train(self, train_sentences, dev_sentences, num_epochs=2, learning_rate=0.05, l1_lambda=0.1, threshold=0.001):
         sentences = train_sentences
         best_accuracy = 0
         self.weights = defaultdict(lambda: defaultdict(float))
 
         for epoch in range(num_epochs):
             random.shuffle(sentences)
+            print(f"Epoch {epoch + 1}/{num_epochs}")
 
-            for sentence in sentences:
+            for idx, sentence in enumerate(sentences):
+                print(f"Training on sentence {idx + 1}/{len(train_sentences)}: {sentence}")
                 alpha = self.forward(sentence, threshold)
                 beta = self.backward(sentence, alpha)
                 self.clear_cache() # clear cache
@@ -246,7 +253,7 @@ class LCCRFTagger:
                 self.update_weights(gradient, learning_rate)
 
             accuracy = self.evaluate(dev_sentences)
-            print(accuracy)
+            print(f"Epoch {epoch + 1}/{num_epochs}, Accuracy: {accuracy}")
 
             if accuracy > best_accuracy:
                 best_accuracy = accuracy
@@ -255,6 +262,7 @@ class LCCRFTagger:
             print(f"Epoch {epoch + 1}/{num_epochs} completed")
 
     def viterbi(self, words):
+        print(f"Running Viterbi for words: {words}")
         n = len(words)
         dp = [{} for _ in range(n+2)]
         backpointer = [{} for _ in range(n+2)]
@@ -272,7 +280,7 @@ class LCCRFTagger:
 
                 for prev_tag in self.tags:
                     prev_score = dp[i - 1][prev_tag]
-                    features = self.extract_word_features(words, i-1)
+                    features = self.extract_word_features(words, i-1, prev_tag)
 
                     # current score
                     score = prev_score + self.compute_feature_score(features, tag)
@@ -303,6 +311,25 @@ class LCCRFTagger:
         best_path.reverse()
         # print(backpointer)
         return best_path[1:]
+        # for i in range(1, n + 1):
+        #     for tag in self.tags:
+        #         max_score, best_prev_tag = max(
+        #             (dp[i - 1][prev_tag] + self.compute_feature_score(self.extract_word_features(words, i - 1, prev_tag), tag), prev_tag)
+        #             for prev_tag in dp[i - 1]
+        #         )
+        #         dp[i][tag] = max_score
+        #         backpointer[i][tag] = best_prev_tag
+
+        # best_last_tag = max(dp[n], key=dp[n].get)
+        # best_path = [best_last_tag]
+
+        # for i in range(n, 0, -1):
+        #     best_last_tag = backpointer[i][best_last_tag]
+        #     best_path.append(best_last_tag)
+
+        # best_path.reverse()
+        # print(f"Viterbi best path: {best_path[1:]}")
+        # return best_path[1:]
 
 
 
@@ -360,9 +387,14 @@ if __name__ == "__main__":
     print("train_sentences loaded")
     # print(train_sentences)
 
+    print(f"Loaded {len(train_sentences)} training sentences:")
+    print(train_sentences[:2])  # Print the first 2 sentences for verification
 
+    dev_sentences = load_data(dev_file)
+    print(f"Loaded {len(dev_sentences)} development sentences:")
+    print(dev_sentences[:2])
     # initialize model
-    sub_train_len = int(len(train_sentences) * 0.1)  # 10% of the training data
+    sub_train_len = int(len(train_sentences) * 0.05)  # 10% of the training data
     sub_train_sentences = random.sample(train_sentences, sub_train_len)
     sub_dev_len = int(len(dev_sentences) * 0.1)  # 10% of the dev data
     sub_dev_sentences = random.sample(dev_sentences, sub_dev_len)
@@ -372,3 +404,7 @@ if __name__ == "__main__":
     # print(len(model.tags))
     model.train(sub_train_sentences, sub_dev_sentences, num_epochs=2, learning_rate=0.1)
     model.save_params(param_file)
+
+
+    train_sentences = load_data(train_file)
+
