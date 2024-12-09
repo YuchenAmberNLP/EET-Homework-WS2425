@@ -85,7 +85,7 @@ class LCCRFTagger:
             # print(words)
             return ([f'word={word}',
                      f'is_capitalized={word[0].isupper()}'] +
-                    [f'suffix={word[-l:]}' for l in range(1,max(len(word), 6))])
+                    [f'suffix={word[-l:]}' for l in range(1, min(len(word), 5))])
 
 
 
@@ -151,8 +151,12 @@ class LCCRFTagger:
                     for prev_tag, prev_score in alpha[i - 1].items()
                 ])
                 max_score = max(max_score, scores[tag])
+            # print(scores)
+            # print(max_score)
             prune_threshold = max_score + math.log(threshold)
             alpha[i] = {tag: score for tag, score in scores.items() if score > prune_threshold}
+
+            # print(f"Step {i}: Total tags before pruning: {len(scores)}, after pruning: {len(alpha[i])}")
 
         return alpha
 
@@ -172,11 +176,11 @@ class LCCRFTagger:
             for tag in alpha[i] if i > 0 else ['<s>']:  # Use <s> for the last position
                 word_features = self.extract_word_features(words, i, tag)
                 scores = [
-                    beta[i + 1][next_tag] + self.compute_feature_score(word_features, next_tag)
+                    next_score + self.compute_feature_score(word_features, next_tag)
                     for next_tag, next_score in beta[i + 1].items()
                 ]
                 beta[i][tag] = self.log_sum_exp(scores)
-
+            # print(f"Tags in beta after pruning: {len(beta[i])}")
         return beta
 
 
@@ -191,6 +195,7 @@ class LCCRFTagger:
         for i, (prev_tag, tag) in enumerate(zip(['<s>'] + list(tags), list(tags) + ['<s>'])):
             for feature in self.extract_word_features(words, i, prev_tag):
                 gradient[tag][feature] += 1
+                # print(gradient)
 
         log_z = alpha[-1]['<s>']
         for i in range(1, n+2):
@@ -204,12 +209,16 @@ class LCCRFTagger:
                 for feature in lex_features:
                     gradient[t][feature] -= gamma
 
-                for t_prev, alpha_score in alpha[i].items():
+                for t_prev, alpha_score in alpha[i-1].items():
                     # expected context feature values
                     context_features = self.extract_context_features(t_prev)
                     context_score = self.compute_feature_score(context_features, t)
-                    gamma = math.exp(alpha_score + lex_score + context_score +
-                                     beta_score - log_z)
+                    if alpha_score + lex_score + context_score + beta_score - log_z < -100:
+                        if beta_score < -200:
+                            print(f"alpha_score: {alpha_score}, lex_score: {lex_score}, context_score: {context_score}, beta_score: {beta_score}, z_log: {log_z}")
+                            print("gamma", alpha_score + context_score + beta_score - log_z)
+                            print("beta", beta)
+                    gamma = math.exp(alpha_score + lex_score + context_score + beta_score - log_z)
                     for feature in context_features:
                         gradient[t][feature] -= gamma
 
@@ -217,7 +226,9 @@ class LCCRFTagger:
             for feature, weight in feature_weights.items():
                 # L1 正则化对梯度的贡献
                 l1_penalty = l1_lambda * (1 if weight > 0 else -1)
-                gradient[tag][feature] = gradient[tag].get(feature, 0.0) - l1_penalty
+                gradient[tag][feature] = gradient[tag][feature] - l1_penalty
+
+        # print(gradient)
 
         return gradient
 
@@ -226,7 +237,7 @@ class LCCRFTagger:
             for feature_key, grad_value in feature_gradients.items():
                 self.weights[tag][feature_key] = self.weights[tag].get(feature_key, 0.0) + learning_rate * grad_value
 
-    def train(self, train_sentences, dev_sentences, num_epochs=2, learning_rate=0.1, l1_lambda=0.01, threshold=0.001):
+    def train(self, train_sentences, dev_sentences, num_epochs=2, learning_rate=0.1, l1_lambda=0.05, threshold=0.05):
         sentences = train_sentences
         best_accuracy = 0
         self.weights = defaultdict(lambda: defaultdict(float))
@@ -270,7 +281,7 @@ class LCCRFTagger:
 
                 for prev_tag in self.tags:
                     prev_score = dp[i - 1][prev_tag]
-                    features = self.extract_word_features(words, i-1)
+                    features = self.extract_word_features(words, i-1, prev_tag)
 
                     # current score
                     score = prev_score + self.compute_feature_score(features, tag)
@@ -360,13 +371,13 @@ if __name__ == "__main__":
 
 
     # initialize model
-    sub_train_len = int(len(train_sentences) * 0.002)  #
+    sub_train_len = int(len(train_sentences) * 0.1)  #
     sub_train_sentences = random.sample(train_sentences, sub_train_len)
-    sub_dev_len = int(len(dev_sentences) * 0.002)  #
+    sub_dev_len = int(len(dev_sentences) * 0.1)  #
     sub_dev_sentences = random.sample(dev_sentences, sub_dev_len)
     model = LCCRFTagger(train_sentences)
     print(len(model.tags))
     # print(model.tags)
     # print(len(model.tags))
-    model.train(sub_train_sentences, sub_dev_sentences, num_epochs=2, learning_rate=0.1)
+    model.train(sub_train_sentences, sub_dev_sentences, num_epochs=10, learning_rate=0.05, l1_lambda=0.1)
     model.save_params(param_file)
