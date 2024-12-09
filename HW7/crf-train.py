@@ -51,6 +51,10 @@ def read_paramfile(filepath):
 class LCCRFTagger:
     def __init__(self, sentences=None, load_paramfile=None):
         self.best_weights = defaultdict(dict)
+        # cache
+        self.feature_cache = {}
+        self.score_cache = {}
+        # initialize or load tags and weights
         if sentences != None and load_paramfile == None:
             self.sentences = sentences
             tags = set(tag for words, tags in sentences for tag in tags)
@@ -60,31 +64,20 @@ class LCCRFTagger:
             print("paramfile loaded.")
             self.tags, self.weights = read_paramfile(load_paramfile)
 
+
     def log_sum_exp(self, scores):
         # prevent overflow
         max_score = max(scores)
         sum_exp = sum(math.exp(score - max_score) for score in scores)
         return max_score + math.log(sum_exp)
 
-    def extract_word_features(self, words, i, prev_tag='<s>'):
-        if i == len(words):
-            return (['word=<s>',
-                     f'prev_tag={prev_tag}'])
-        else:
-            word = words[i]
-            # print(words)
-            return ([f'word={word}',
-                     f'is_capitalized={word[0].isupper()}',
-                     f'prev_tag={prev_tag}'] +
-                    [f'suffix={word[-l:]}' for l in range(1,max(len(word), 6))])
-
 
     def extract_context_features(self, prev_tag='<s>'):
         # print(words)
         return ([f'prev_tag={prev_tag}'])
 
-
     def extract_lex_features(self, words, i):
+
         if i == len(words):
             return (['word=<s>'])
         else:
@@ -95,8 +88,46 @@ class LCCRFTagger:
                     [f'suffix={word[-l:]}' for l in range(1,max(len(word), 6))])
 
 
+
+    def extract_word_features(self, words, i, prev_tag='<s>'):
+        cache_key = (i, prev_tag)
+        if cache_key in self.feature_cache:
+            return self.feature_cache[cache_key]
+
+        features = self.extract_lex_features(words, i) + self.extract_context_features(prev_tag)
+        # if i == len(words):
+        #     return (['word=<s>',
+        #              f'prev_tag={prev_tag}'])
+        # else:
+        #     word = words[i]
+        #     # print(words)
+        #     features = [f'word={word}',
+        #                 f'is_capitalized={word[0].isupper()}',
+        #                 f'prev_tag={prev_tag}'] + [f'suffix={word[-l:]}' for l in range(1,max(len(word), 6))]
+
+        self.feature_cache[cache_key] = features
+        return features
+
+
+    def clear_cache(self):
+        self.feature_cache.clear()
+        self.score_cache.clear()
+
     def compute_feature_score(self, features, tag):
-        return sum(self.weights[tag].get(f, 0.0) for f in features)
+        # use cache
+        total_score = 0.0
+        for feature in features:
+            cache_key = (feature, tag)
+
+            if cache_key in self.score_cache:
+                feature_score = self.score_cache[cache_key]
+            else:
+                feature_score = self.weights[tag].get(feature, 0.0)
+                self.score_cache[cache_key] = feature_score
+
+            total_score += feature_score
+
+        return total_score
 
     def forward(self, sentence, threshold):
         """
@@ -206,12 +237,14 @@ class LCCRFTagger:
             for sentence in sentences:
                 alpha = self.forward(sentence, threshold)
                 beta = self.backward(sentence, alpha)
+                self.clear_cache() # clear cache
 
                 gradient = self.compute_gradient(sentence, alpha, beta, l1_lambda)
 
                 self.update_weights(gradient, learning_rate)
 
             accuracy = self.evaluate(dev_sentences)
+            print(accuracy)
 
             if accuracy > best_accuracy:
                 best_accuracy = accuracy
@@ -317,18 +350,22 @@ class LCCRFTagger:
 
 if __name__ == "__main__":
     train_file = sys.argv[1]
-    param_file = sys.argv[2]
+    dev_file = sys.argv[2]
+    param_file = sys.argv[3]
     train_sentences = load_data(train_file)
+    dev_sentences = load_data(dev_file)
     print("train_sentences loaded")
     # print(train_sentences)
 
 
     # initialize model
-    sub_train_len = int(len(train_sentences) * 0.005)  #
+    sub_train_len = int(len(train_sentences) * 0.1)  #
     sub_train_sentences = random.sample(train_sentences, sub_train_len)
+    sub_dev_len = int(len(dev_sentences) * 0.1)  #
+    sub_dev_sentences = random.sample(dev_sentences, sub_dev_len)
     model = LCCRFTagger(train_sentences)
     print(len(model.tags))
     # print(model.tags)
     # print(len(model.tags))
-    model.train(sub_train_sentences, num_epochs=2, learning_rate=0.1)
+    model.train(sub_train_sentences, sub_dev_sentences, num_epochs=10, learning_rate=0.1)
     model.save_params(param_file)
