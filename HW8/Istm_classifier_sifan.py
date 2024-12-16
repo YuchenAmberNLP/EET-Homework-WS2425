@@ -57,8 +57,8 @@ class TextClassifier(nn.Module):
         super(TextClassifier, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=pad_idx)
         self.dropout = nn.Dropout(0.5)  # Added dropout layer
-        self.lstm = nn.LSTM(embed_dim, hidden_dim, batch_first=True)
-        self.fc = nn.Linear(hidden_dim, output_dim)
+        self.lstm = nn.LSTM(embed_dim, hidden_dim, num_layers=2, batch_first=True, bidirectional=True) # Multi-Layered, Bidirectional
+        self.fc = nn.Linear(hidden_dim * 2, output_dim) # Multiply by 2 for bidirectional
     
     def forward(self, text, lengths):
         embedded = self.embedding(text)
@@ -71,7 +71,7 @@ class TextClassifier(nn.Module):
         # Unpack the packed sequence
         output, _ = pad_packed_sequence(packed_output, batch_first=True)
         
-        # Apply max pooling over the sequence length dimension
+        # Apply mean pooling over the sequence length dimension
         pooled_output, _ = torch.min(output, dim=1)
         
         output = self.fc(pooled_output)
@@ -186,17 +186,17 @@ if __name__ == "__main__":
 
 
 ### Example Usage:
-# --embed_dim 512 --hidden_dim 512 --batch_size 16 --epochs 10
-# Epoch 1/10: Train Loss: 1.5358, Train Accuracy: 0.3038, Dev Accuracy: 0.3606
-# Epoch 2/10: Train Loss: 1.3854, Train Accuracy: 0.4032, Dev Accuracy: 0.3388
-# Epoch 3/10: Train Loss: 1.2208, Train Accuracy: 0.4857, Dev Accuracy: 0.3624
-# Epoch 4/10: Train Loss: 1.0546, Train Accuracy: 0.5616, Dev Accuracy: 0.3878
-# Epoch 5/10: Train Loss: 0.8983, Train Accuracy: 0.6387, Dev Accuracy: 0.3733
-# Epoch 6/10: Train Loss: 0.7408, Train Accuracy: 0.7074, Dev Accuracy: 0.3797
-# Epoch 7/10: Train Loss: 0.6210, Train Accuracy: 0.7601, Dev Accuracy: 0.3815
-# Epoch 8/10: Train Loss: 0.5053, Train Accuracy: 0.8089, Dev Accuracy: 0.3669
-# Epoch 9/10: Train Loss: 0.4276, Train Accuracy: 0.8438, Dev Accuracy: 0.3615
-# Epoch 10/10: Train Loss: 0.3670, Train Accuracy: 0.8665, Dev Accuracy: 0.3787
+#  --embed_dim 512 --hidden_dim 512 --batch_size 16 --epochs 10
+# Epoch 1/10: Train Loss: 1.5309, Train Accuracy: 0.3070, Dev Accuracy: 0.3669
+# Epoch 2/10: Train Loss: 1.4012, Train Accuracy: 0.3886, Dev Accuracy: 0.3688
+# Epoch 3/10: Train Loss: 1.2315, Train Accuracy: 0.4685, Dev Accuracy: 0.3942
+# Epoch 4/10: Train Loss: 1.0571, Train Accuracy: 0.5557, Dev Accuracy: 0.3579
+# Epoch 5/10: Train Loss: 0.8462, Train Accuracy: 0.6520, Dev Accuracy: 0.3451
+# Epoch 6/10: Train Loss: 0.6423, Train Accuracy: 0.7467, Dev Accuracy: 0.3642
+# Epoch 7/10: Train Loss: 0.4825, Train Accuracy: 0.8173, Dev Accuracy: 0.3497
+# Epoch 8/10: Train Loss: 0.3736, Train Accuracy: 0.8622, Dev Accuracy: 0.3533
+# Epoch 9/10: Train Loss: 0.2890, Train Accuracy: 0.8922, Dev Accuracy: 0.3460
+# Epoch 10/10: Train Loss: 0.2479, Train Accuracy: 0.9092, Dev Accuracy: 0.3460
 # Model saved to parfile
 
-### Final train accuracy: 0.8665, Final dev accuracy: 0.3787
+### Final train accuracy: 0.9092, Final dev accuracy: 0.3460
