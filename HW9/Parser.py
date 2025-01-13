@@ -50,14 +50,14 @@ class SpanRepresentation(nn.Module):
         padded_input = torch.cat([dummy, word_representations, dummy], dim=1)
 
         # BiLSTM
-        bilstm_out, _ = self.bilstm(self.dropout(padded_input))  # (batch_size, seq_len + 2, 2 * hidden_size)
+        bilstm_out, _ = self.bilstm(self.dropout(padded_input))  # (seq_len + 2, 2 * hidden_size)
 
-        forward = bilstm_out[:, :, :self.hidden_size]  #  (batch_size, seq_len + 2, hidden_size)
-        backward = bilstm_out[:, :, self.hidden_size:]  #  (batch_size, seq_len + 2, hidden_size)
+        forward = bilstm_out[:, :, :self.hidden_size]  #  (seq_len + 2, hidden_size)
+        backward = bilstm_out[:, :, self.hidden_size:]  #  (seq_len + 2, hidden_size)
 
         # remove last timestep of forward and first timestep of backward
-        forward = forward[:, :-1, :]  #  (batch_size, seq_len + 1, hidden_size)
-        backward = backward[:, 1:, :]  #  (batch_size, seq_len + 1, hidden_size)
+        forward = forward[:, :-1, :]  #  (seq_len + 1, hidden_size)
+        backward = backward[:, 1:, :]  #  (seq_len + 1, hidden_size)
         forward = forward.squeeze(0)  # (N+1, hidden_dim)
         backward = backward.squeeze(0)
         positions = torch.arange(seq_len + 1, device=word_representations.device)  # (N+1)
@@ -92,28 +92,22 @@ class SpanClassification(nn.Module):
         return scores
 
 
-
 class Parser(nn.Module):
     def __init__(self, num_symbols, embedding_dim, word_hidden_size, span_hidden_size, ff_hidden_dim, num_labels, span_lstm_depth=1, dropout_rate=0.5):
         super(Parser, self).__init__()
         self.word_representation = WordRepresentation(num_symbols, embedding_dim, word_hidden_size, dropout_rate)
-        # 使用 SpanRepresentation 獲得 span 表示
         self.span_representation = SpanRepresentation(2 * word_hidden_size, span_hidden_size, span_lstm_depth, dropout_rate)
         # SpanClassification
         self.span_classification = SpanClassification(2 * span_hidden_size, ff_hidden_dim, num_labels)
 
     def forward(self, suffix_tensor, prefix_tensor):
-        """
-        suffix_emb: (seq_len, embedding_dim)
-        prefix_emb: (seq_len, embedding_dim)
-        """
-        word_representations = self.word_representation(suffix_tensor, prefix_tensor)  # (batch_size, seq_len, 2 * word_hidden_size)
+        word_representations = self.word_representation(suffix_tensor, prefix_tensor)  # (seq_len, 2 * word_hidden_size)
 
         # get span representations
-        span_representations = self.span_representation(word_representations) #num_spans, 2 * span_hidden_size)
+        span_representations = self.span_representation(word_representations) # (num_spans, 2 * span_hidden_size)
 
         # calculate scores
-        scores = self.span_classification(span_representations)  # (num_spans, num_categories)
+        scores = self.span_classification(span_representations)  # (num_spans, num_labels)
         return scores
 
 
