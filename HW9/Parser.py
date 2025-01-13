@@ -112,10 +112,22 @@ class Parser(nn.Module):
 
 
 if __name__ == "__main__":
-    parser = Parser(num_symbols=26, embedding_dim=128, word_hidden_size=64, span_hidden_size=64, ff_hidden_dim=32, num_labels=20)
-    prefix_tensor = torch.randint(0, 26, (8, 10))
-    suffix_tensor = torch.randint(0, 26, (8, 10))
+    sentence_length = 8
+    prefix_suffix_length = 10
+    num_symbols = 26
+    num_labels = 20
+    parser = Parser(num_symbols=num_symbols, embedding_dim=128, word_hidden_size=64, span_hidden_size=64, ff_hidden_dim=32, num_labels=num_labels)
+    prefix_tensor = torch.randint(0, 26, (sentence_length, prefix_suffix_length))
+    suffix_tensor = torch.randint(0, 26, (sentence_length, prefix_suffix_length))
     span_scores = parser(suffix_tensor, prefix_tensor)
-    print("Span Scores Shape:", span_scores.shape)
+    # print("Span Scores Shape:", span_scores.shape)
 
+    num_spans = (sentence_length * (sentence_length + 1)) // 2  # Correct number of spans
+    assert span_scores.size() == (num_spans, num_labels), (
+        f"Output dimensions are incorrect: {span_scores.size()}, "
+        f"expected: ({num_spans}, {num_labels})"
+    )
+
+    print("Test successful!")
+    print(f"Output dimensions: {span_scores.size()}")
 
